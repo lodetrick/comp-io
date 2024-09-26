@@ -1,6 +1,6 @@
 [package]
 name = "comp-io"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A crate for optimized io operations to numerical types"
 license = "MIT"
