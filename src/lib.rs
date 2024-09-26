@@ -1,6 +1,6 @@
 //! # Comp IO
 //! 
-//! `comp_io` is a collection of utilities centered around the `Reader` class
+//! `comp_io` is a collection of utilities centered around the `Reader` struct
 //! to make competitive programming easier to write
 
 use std::io::{self, Read};
