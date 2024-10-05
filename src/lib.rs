@@ -1,27 +1,27 @@
 //! # Comp IO
-//! 
+//!
 //! `comp_io` is a collection of utilities centered around the `Reader` struct
 //! to make competitive programming easier to write
 
 use std::io::{self, Read};
 
 /// Reads data from stdin in an optimized manner
-/// 
+///
 /// Limitations: doesn't skip whitespace. Assumes that input data is sanitized (each number is separated by exactly 1 character)
 /// This allows for faster reading of data, because in most competitive programming scenarios, the input data is already provided
 /// in such a way
-/// 
+///
 /// # Example:
-/// 
+///
 /// ```no_run
 /// let mut reader = comp_io::Reader::new();
-/// 
+///
 /// // Read an i32:
 /// let a: i32 = reader.next_i32().unwrap();
-/// 
+///
 /// // Read a pair of i32s:
 /// let (b, c): (i32, i32) = reader.next_pair().unwrap();
-/// 
+///
 /// // Read an f64
 /// let d: f64 = reader.next_f64().unwrap();
 /// ```
@@ -41,6 +41,9 @@ impl Iterator for Reader {
     fn next(&mut self) -> Option<Self::Item> {
         // If at end of buffer
         if self.index >= self.len {
+            if self.len < 400_000 {
+                return None;
+            }
             // Try to read from stdin
             self.buffer.clear(); // necessary?
             self.len = io::stdin()
@@ -69,26 +72,26 @@ impl Iterator for Reader {
 
 impl Reader {
     /// Instantiates a new reader
-    /// 
+    ///
     /// # Example:
-    /// 
+    ///
     /// ```
     /// let mut reader = comp_io::Reader::new();
     /// ```
     pub fn new() -> Self {
         Reader {
             buffer: Vec::<u8>::with_capacity(400_000),
-            index: 0,
-            len: 0,
+            index: usize::MAX,
+            len: usize::MAX,
         }
     }
 
     /// Useful for testing reader without requiring access to stdin
-    /// 
+    ///
     /// Note: Best with `cargo test`, otherwise still needs stdin
-    /// 
+    ///
     /// # Example:
-    /// 
+    ///
     /// ```
     /// let mut reader = comp_io::Reader::from_str("12 43\n-42");
     /// ```
@@ -120,40 +123,40 @@ impl Reader {
                 None => break,
             };
         }
-        Some((if neg {-r} else {r}, val))
+        Some((if neg { -r } else { r }, val))
     }
 
     /// Reads the next u32 from stdin
     pub fn next_u32(&mut self) -> Option<u32> {
         Some(self.read_i32()?.0.unsigned_abs())
     }
-    
+
     /// Reads the next usize from stdin
     pub fn next_usize(&mut self) -> Option<usize> {
         Some(self.read_i32()?.0.unsigned_abs() as usize)
     }
-    
+
     /// Reads the next i32 from stdin
     pub fn next_i32(&mut self) -> Option<i32> {
         Some(self.read_i32()?.0)
     }
-    
+
     /// Reads the next char from stdin
     pub fn next_char(&mut self) -> Option<char> {
         Some(self.next()? as char)
     }
-    
+
     /// Reads the next pair of i32s from stdin
     pub fn next_pair(&mut self) -> Option<(i32, i32)> {
         Some((self.read_i32()?.0, self.read_i32()?.0))
     }
-    
+
     /// Reads the next f64 from stdin
     pub fn next_f64(&mut self) -> Option<f64> {
-        let (base, last) = self.read_i32()?;
+        let (base, latest) = self.read_i32()?;
         let base: f64 = base as f64;
-        if last != 46 { // don't have a period
-            return Some(base as f64);
+        if latest != b'.' as i32 { // number doesn't have a period
+            return Some(base);
         }
         let (mut dec, mut val, mut ten) = (0.0, 48, 1.0);
         while val >= b'0' && val <= b'9' {
@@ -171,7 +174,7 @@ impl Reader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_reader_from_str() {
         let reader = Reader::from_str("-4.1");
@@ -190,7 +193,7 @@ mod tests {
         assert_eq!(reader.next_f64().unwrap(), 32.);
         assert_eq!(reader.next_f64().unwrap(), 45.);
     }
-    
+
     #[test]
     fn test_next_char() {
         let mut reader = Reader::from_str("ab cd");
@@ -200,7 +203,7 @@ mod tests {
         assert_eq!(reader.next_char().unwrap(), 'c');
         assert_eq!(reader.next_char().unwrap(), 'd');
     }
-    
+
     #[test]
     fn test_next_pair() {
         let mut reader = Reader::from_str("23 32\n12 -34 57 97\n-12 3");
@@ -209,7 +212,7 @@ mod tests {
         assert_eq!(reader.next_pair().unwrap(), (57, 97));
         assert_eq!(reader.next_pair().unwrap(), (-12, 3));
     }
-    
+
     #[test]
     fn test_next_usize() {
         let mut reader = Reader::from_str("23 32\n12\n34");
