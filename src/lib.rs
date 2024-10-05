@@ -101,14 +101,23 @@ impl Reader {
     }
 
     fn read_i32(&mut self) -> Option<(i32, i32)> {
-        let (mut r, mut val, neg) = (0,48,self.next()? == 45);
-        self.index -= if neg {0} else {1};
-        while val >= 48 && val <= 57 {
+        // let (mut r, mut val, neg) = (0, 48, self.next()? == b'-');
+        // self.index -= if neg {0} else {1};
+
+        let mut r = 0;
+        let (mut val, neg) = match self.next()? {
+            v @ b'0'..=b'9' => (v as i32, false), // could also move to the end with no ifs, don't know which is better
+            b'-' => (48, true),
+            b'+' => (48, false),
+            _ => return None, // Unexpected character
+        };
+
+        while val >= b'0' as i32 && val <= b'9' as i32 {
             r = r * 10 + val - 48;
 
             val = match self.next() {
                 Some(a) => a as i32,
-                _ => break,
+                None => break,
             };
         }
         Some((if neg {-r} else {r}, val))
@@ -147,8 +156,8 @@ impl Reader {
             return Some(base as f64);
         }
         let (mut dec, mut val, mut ten) = (0.0, 48, 1.0);
-        while val >= 48 && val <= 57 {
-            dec += ((val - 48) as f64) * ten;
+        while val >= b'0' && val <= b'9' {
+            dec += ((val - b'0') as f64) * ten;
             ten *= 0.1;
             val = match self.next() {
                 Some(a) => a,
@@ -208,5 +217,11 @@ mod tests {
         assert_eq!(reader.next_usize().unwrap(), 32);
         assert_eq!(reader.next_usize().unwrap(), 12);
         assert_eq!(reader.next_usize().unwrap(), 34);
+    }
+
+    #[test]
+    fn test_long_float() {
+        let mut reader = Reader::from_str("4.323580432456786");
+        assert_eq!(reader.next_f64().unwrap(), 4.323580432456786);
     }
 }
